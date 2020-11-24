@@ -68,7 +68,21 @@ export class PostController {
   async find(
     @param.filter(Post) filter?: Filter<Post>,
   ): Promise<Post[]> {
-    return this.postRepository.find(filter);
+    const posts = await this.postRepository.find(filter);
+    await Promise.all(
+      posts.map(
+        async (post): Promise<Post> => {
+          let comments = await this.commentRepository.find({
+            where: {
+              postId: post.id
+            }
+          });
+          post.comments = comments;
+          return post;
+        },
+      ),
+    );
+    return posts;
   }
 
   @patch('/posts', {
